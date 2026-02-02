@@ -1,16 +1,12 @@
 {
   "version": 2,
-  "name": "captainsv-security-shop",
-  "builds": [
-    {
-      "src": "*.html",
-      "use": "@vercel/static"
+  "env": {
+    "GITHUB_PRODUCTS_TOKEN": "@github_products_token"
+  },
+  "functions": {
+    "api/download.js": {
+      "memory": 1024,
+      "maxDuration": 10
     }
-  ],
-  "routes": [
-    {
-      "src": "/",
-      "dest": "/index.html"
-    }
-  ]
+  }
 }

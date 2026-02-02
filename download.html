@@ -294,13 +294,60 @@
             productList.innerHTML = listHtml;
         }
 
-        function downloadFile(filename) {
-            // In production, this would be a signed/authenticated download URL
-            // For now, show a message that the file would be downloaded
-            alert(`Download initiated for: ${filename}\n\nIn production, this would trigger an authenticated download from our secure server.`);
+        async function downloadFile(filename) {
+            const txHash = urlParams.get('tx');
+            const productId = urlParams.get('product');
             
-            // Track download for analytics
-            trackDownload(txHash, filename);
+            if (!txHash || !productId) {
+                alert('Missing transaction information. Please try again.');
+                return;
+            }
+
+            try {
+                // Show loading state
+                const status = document.getElementById('status');
+                if (status) {
+                    status.style.display = 'block';
+                    status.className = 'status loading';
+                    status.innerHTML = '<p>Downloading your product...</p>';
+                }
+
+                // Call serverless function to get file
+                const response = await fetch(`/api/download?txHash=${txHash}&productId=${productId}`);
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Download failed');
+                }
+
+                // Get file content
+                const content = await response.text();
+                
+                // Create blob and trigger download
+                const blob = new Blob([content], { type: 'text/markdown' });
+                const url = URL.createObjectURL(blob);
+                
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+
+                // Show success
+                if (status) {
+                    status.className = 'status success';
+                    status.innerHTML = '<p>✅ Download complete! Check your downloads folder.</p>';
+                }
+                
+                // Track download
+                trackDownload(txHash, filename);
+                
+            } catch (error) {
+                console.error('Download error:', error);
+                alert(`Download failed: ${error.message}\n\nPlease contact @captainsv on Moltbook with your transaction hash.`);
+            }
         }
 
         function trackDownload(txHash, filename) {
